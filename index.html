@@ -227,7 +227,7 @@
   <!-- DASHBOARD -->
   <section id="dashboard" class="section active">
     <h2 id="dash-title">Přehled</h2>
-    <div class="grid-3" style="margin-bottom:20px">
+    <div class="grid-3" style="margin-bottom:20px; grid-auto-rows: 100px;">
       <div class="card dash-card">
         <div class="card-title">Příjmy tento měsíc</div>
         <div class="card-value green" id="dash-income-month">—</div>
@@ -305,6 +305,10 @@
           <div class="form-group">
             <label>Počáteční hodnota (Kč)</label>
             <input type="number" id="calc-initial" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Měsíční investice (Kč)</label>
+            <input type="number" id="calc-monthly" placeholder="0">
           </div>
         </div>
         <div class="form-row">
@@ -1277,15 +1281,21 @@ document.getElementById('calc-initial').addEventListener('input', () => {
 });
 
 document.getElementById('btn-calc').addEventListener('click', () => {
-  const initial = parseFloat(document.getElementById('calc-initial').value) || 0;
-  const rate    = (parseFloat(document.getElementById('calc-rate').value) || 7) / 100;
-  const years   = parseInt(document.getElementById('calc-years').value) || 10;
-  const result  = initial * Math.pow(1 + rate, years);
-  const gain    = result - initial;
+  const initial  = parseFloat(document.getElementById('calc-initial').value) || 0;
+  const monthly  = parseFloat(document.getElementById('calc-monthly').value) || 0;
+  const rate     = (parseFloat(document.getElementById('calc-rate').value) || 7) / 100;
+  const years    = parseInt(document.getElementById('calc-years').value) || 10;
+  const mRate    = rate / 12;
+  const months   = years * 12;
+  const result   = initial * Math.pow(1 + mRate, months)
+                 + (monthly > 0 ? monthly * (Math.pow(1 + mRate, months) - 1) / mRate : 0);
+  const invested = initial + monthly * months;
+  const gain     = result - invested;
   document.getElementById('calc-result').innerHTML = `
     <div class="card" style="background:var(--primary-light)">
       <div class="card-title">Budoucí hodnota za ${years} let</div>
       <div class="card-value" style="color:var(--primary)">${fmt(result)}</div>
+      <p class="text-muted mt-8">Vloženo celkem: <strong>${fmt(invested)}</strong></p>
       <p class="text-muted mt-8">Zhodnocení: <strong>${fmt(gain)}</strong> (${(rate*100).toFixed(1)} % p.a.)</p>
     </div>
   `;
