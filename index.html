@@ -608,7 +608,10 @@ function renderIncome() {
                   <td>${item.name}</td>
                   <td class="text-right bold">${fmt(item.amount)}</td>
                   <td class="text-muted">${item.note || ''}</td>
-                  <td><button class="btn btn-ghost btn-sm" data-del-income="${item.id}" data-del-m="${mStr}">✕</button></td>
+                  <td class="flex gap-8">
+                    <button class="btn btn-ghost btn-sm" data-edit-income="${item.id}" data-edit-m="${mStr}">Upravit</button>
+                    <button class="btn btn-ghost btn-sm" data-del-income="${item.id}" data-del-m="${mStr}">✕</button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -621,6 +624,9 @@ function renderIncome() {
 
   document.querySelectorAll('[data-add-income]').forEach(btn => {
     btn.addEventListener('click', () => openAddIncomeModal(btn.dataset.addIncome));
+  });
+  document.querySelectorAll('[data-edit-income]').forEach(btn => {
+    btn.addEventListener('click', () => openEditIncomeModal(btn.dataset.editIncome, btn.dataset.editM));
   });
   document.querySelectorAll('[data-del-income]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -663,6 +669,41 @@ function openAddIncomeModal(mStr) {
     if (!state.income[incomeViewYear]) state.income[incomeViewYear] = {};
     if (!state.income[incomeViewYear][mStr]) state.income[incomeViewYear][mStr] = { items: [] };
     state.income[incomeViewYear][mStr].items.push({ id: uid_gen(), name, amount, note });
+    await saveIncome();
+    hideModal();
+    renderIncome();
+  };
+}
+
+function openEditIncomeModal(itemId, mStr) {
+  const item = state.income[incomeViewYear]?.[mStr]?.items?.find(i => i.id === itemId);
+  if (!item) return;
+  showModal(`
+    <h3 style="margin-bottom:16px">Upravit příjem — ${CZ_MONTHS[parseInt(mStr)-1]} ${incomeViewYear}</h3>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Název zdroje</label>
+      <input type="text" id="m-inc-name" value="${item.name}">
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Částka (Kč)</label>
+      <input type="number" id="m-inc-amount" value="${item.amount || 0}">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Poznámka (volitelně)</label>
+      <input type="text" id="m-inc-note" value="${item.note || ''}">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-inc-save">Uložit</button>
+      <button class="btn btn-ghost" id="m-inc-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-inc-cancel').onclick = hideModal;
+  document.getElementById('m-inc-save').onclick = async () => {
+    const name = document.getElementById('m-inc-name').value.trim();
+    if (!name) return;
+    item.name   = name;
+    item.amount = parseFloat(document.getElementById('m-inc-amount').value) || 0;
+    item.note   = document.getElementById('m-inc-note').value.trim();
     await saveIncome();
     hideModal();
     renderIncome();
@@ -713,8 +754,8 @@ function renderCosts() {
             <thead>
               <tr>
                 <th>Název</th><th>Měna</th><th class="text-right">Cena</th>
-                <th>Frekvence</th><th class="text-right">Měsíčně (Kč)</th>
-                <th>Platforma</th><th></th>
+                <th>Frekvence</th><th class="text-right">Měsíčně (Kč)</th><th class="text-right">Ročně (Kč)</th>
+                <th>Platforma</th><th>Účet</th><th>Způsob platby</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -725,8 +766,14 @@ function renderCosts() {
                   <td class="text-right">${item.price}</td>
                   <td>${item.frequency === 'yearly' ? 'ročně' : 'měsíčně'}</td>
                   <td class="text-right bold">${fmt(itemMonthlyCZK(item))}</td>
+                  <td class="text-right">${fmt(itemYearlyCZK(item))}</td>
                   <td class="text-muted">${item.platform || ''}</td>
-                  <td><button class="btn btn-ghost btn-sm" data-del-item="${item.id}">✕</button></td>
+                  <td class="text-muted">${item.account || ''}</td>
+                  <td class="text-muted">${item.paymentMethod || ''}</td>
+                  <td class="flex gap-8">
+                    <button class="btn btn-ghost btn-sm" data-edit-item="${item.id}">Upravit</button>
+                    <button class="btn btn-ghost btn-sm" data-del-item="${item.id}">✕</button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -739,6 +786,8 @@ function renderCosts() {
 
   document.querySelectorAll('[data-add-item]').forEach(btn =>
     btn.addEventListener('click', () => openAddCostItemModal(btn.dataset.addItem)));
+  document.querySelectorAll('[data-edit-item]').forEach(btn =>
+    btn.addEventListener('click', () => openEditCostItemModal(btn.dataset.editItem)));
   document.querySelectorAll('[data-rename-cat]').forEach(btn =>
     btn.addEventListener('click', () => openRenameCatModal(btn.dataset.renameCat)));
   document.querySelectorAll('[data-del-cat]').forEach(btn =>
@@ -796,6 +845,24 @@ function openAddCostItemModal(categoryId) {
         <input type="number" id="m-item-due" min="1" max="31" placeholder="1">
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Účet (email)</label>
+        <input type="text" id="m-item-account" placeholder="muj@email.cz">
+      </div>
+      <div class="form-group">
+        <label>Způsob platby</label>
+        <select id="m-item-payment">
+          <option value="">—</option>
+          <option value="Karta">Karta</option>
+          <option value="Apple Pay">Apple Pay</option>
+          <option value="Google Pay">Google Pay</option>
+          <option value="Převodem">Převodem</option>
+          <option value="PayPal">PayPal</option>
+          <option value="Jiné">Jiné</option>
+        </select>
+      </div>
+    </div>
     <div class="form-group" style="margin-bottom:16px">
       <label>Poznámka (volitelně)</label>
       <input type="text" id="m-item-note">
@@ -817,8 +884,95 @@ function openAddCostItemModal(categoryId) {
       frequency: document.getElementById('m-item-freq').value,
       platform: document.getElementById('m-item-platform').value.trim(),
       dueDay: parseInt(document.getElementById('m-item-due').value) || null,
+      account: document.getElementById('m-item-account').value.trim(),
+      paymentMethod: document.getElementById('m-item-payment').value,
       note: document.getElementById('m-item-note').value.trim()
     });
+    await saveCostItems();
+    hideModal();
+    renderCosts();
+  };
+}
+
+function openEditCostItemModal(itemId) {
+  const item = state.costs.items.find(i => i.id === itemId);
+  showModal(`
+    <h3 style="margin-bottom:16px">Upravit položku</h3>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Název</label>
+      <input type="text" id="m-item-name" value="${item.name}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cena</label>
+        <input type="number" id="m-item-price" value="${item.price || 0}">
+      </div>
+      <div class="form-group">
+        <label>Měna</label>
+        <select id="m-item-currency">
+          <option value="CZK" ${(item.currency||'CZK')==='CZK'?'selected':''}>CZK</option>
+          <option value="EUR" ${item.currency==='EUR'?'selected':''}>EUR</option>
+          <option value="USD" ${item.currency==='USD'?'selected':''}>USD</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Frekvence</label>
+      <select id="m-item-freq">
+        <option value="monthly" ${item.frequency!=='yearly'?'selected':''}>Měsíčně</option>
+        <option value="yearly" ${item.frequency==='yearly'?'selected':''}>Ročně</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Platforma (volitelně)</label>
+        <input type="text" id="m-item-platform" value="${item.platform || ''}">
+      </div>
+      <div class="form-group">
+        <label>Splatnost — den v měsíci</label>
+        <input type="number" id="m-item-due" min="1" max="31" value="${item.dueDay || ''}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Účet (email)</label>
+        <input type="text" id="m-item-account" value="${item.account || ''}">
+      </div>
+      <div class="form-group">
+        <label>Způsob platby</label>
+        <select id="m-item-payment">
+          <option value="" ${!item.paymentMethod?'selected':''}>—</option>
+          <option value="Karta" ${item.paymentMethod==='Karta'?'selected':''}>Karta</option>
+          <option value="Apple Pay" ${item.paymentMethod==='Apple Pay'?'selected':''}>Apple Pay</option>
+          <option value="Google Pay" ${item.paymentMethod==='Google Pay'?'selected':''}>Google Pay</option>
+          <option value="Převodem" ${item.paymentMethod==='Převodem'?'selected':''}>Převodem</option>
+          <option value="PayPal" ${item.paymentMethod==='PayPal'?'selected':''}>PayPal</option>
+          <option value="Jiné" ${item.paymentMethod==='Jiné'?'selected':''}>Jiné</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Poznámka (volitelně)</label>
+      <input type="text" id="m-item-note" value="${item.note || ''}">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-item-save">Uložit</button>
+      <button class="btn btn-ghost" id="m-item-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-item-cancel').onclick = hideModal;
+  document.getElementById('m-item-save').onclick = async () => {
+    const name = document.getElementById('m-item-name').value.trim();
+    if (!name) return;
+    item.name          = name;
+    item.price         = parseFloat(document.getElementById('m-item-price').value) || 0;
+    item.currency      = document.getElementById('m-item-currency').value;
+    item.frequency     = document.getElementById('m-item-freq').value;
+    item.platform      = document.getElementById('m-item-platform').value.trim();
+    item.dueDay        = parseInt(document.getElementById('m-item-due').value) || null;
+    item.account       = document.getElementById('m-item-account').value.trim();
+    item.paymentMethod = document.getElementById('m-item-payment').value;
+    item.note          = document.getElementById('m-item-note').value.trim();
     await saveCostItems();
     hideModal();
     renderCosts();
@@ -877,6 +1031,9 @@ document.getElementById('btn-add-category').addEventListener('click', () => {
 // ============================================================
 function renderInvestments() {
   const total = state.investments.platforms.reduce((s,p) => s + (p.value || 0), 0);
+  // Předvyplnit kalkulačku hodnotou portfolia (uživatel může ručně upravit)
+  const calcEl = document.getElementById('calc-initial');
+  if (calcEl && !calcEl._userEdited) calcEl.value = Math.round(total) || '';
   let platHtml = state.investments.platforms.length === 0
     ? '<p class="text-muted">Žádné platformy.</p>'
     : `<table>
@@ -914,18 +1071,44 @@ function renderInvestments() {
   let txHtml = txs.length === 0
     ? '<p class="text-muted">Žádné transakce.</p>'
     : `<table>
-        <thead><tr><th>Datum</th><th>Z účtu</th><th>Na platformu</th><th class="text-right">Částka (Kč)</th><th>Poznámka</th><th></th></tr></thead>
+        <thead><tr><th>Datum</th><th>Typ</th><th>Platforma / Účet</th><th class="text-right">Hodnota / Částka</th><th>Změna</th><th>Poznámka</th><th></th></tr></thead>
         <tbody>
-          ${txs.map(tx => `
-            <tr>
+          ${txs.map(tx => {
+            let rowBg = '';
+            let typLabel = '';
+            let platformCol = '';
+            let amountCol = '';
+            let deltaCol = '';
+            if (tx.type === 'value_change') {
+              const delta = (tx.newValue || 0) - (tx.oldValue || 0);
+              const isPos = delta >= 0;
+              rowBg = isPos ? 'background:rgba(22,163,74,.06)' : 'background:rgba(220,38,38,.06)';
+              typLabel = 'Změna hodnoty';
+              platformCol = tx.platform || '';
+              amountCol = `<span>${fmt(tx.oldValue)} → <strong>${fmt(tx.newValue)}</strong></span>`;
+              deltaCol = `<span style="font-weight:700;color:${isPos?'var(--success)':'var(--danger)'}">${isPos?'+':''}${fmt(delta)}</span>`;
+            } else if (tx.type === 'new_platform') {
+              rowBg = 'background:rgba(37,99,235,.05)';
+              typLabel = 'Nová platforma';
+              platformCol = tx.platform || '';
+              amountCol = `<strong>${fmt(tx.amount)}</strong>`;
+              deltaCol = '';
+            } else {
+              typLabel = 'Vklad';
+              platformCol = `${tx.fromAccount || ''} → ${tx.toPlatform || ''}`;
+              amountCol = `<strong>${fmt(tx.amount)}</strong>`;
+              deltaCol = '';
+            }
+            return `<tr style="${rowBg}">
               <td>${tx.date}</td>
-              <td>${tx.fromAccount || ''}</td>
-              <td>${tx.toPlatform || ''}</td>
-              <td class="text-right bold">${fmt(tx.amount)}</td>
+              <td class="text-muted">${typLabel}</td>
+              <td>${platformCol}</td>
+              <td class="text-right">${amountCol}</td>
+              <td>${deltaCol}</td>
               <td class="text-muted">${tx.note || ''}</td>
               <td><button class="btn btn-ghost btn-sm" data-del-tx="${tx.id}">✕</button></td>
-            </tr>
-          `).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
        </table>`;
   document.getElementById('inv-transactions').innerHTML = txHtml;
@@ -942,8 +1125,12 @@ function openEditPlatformModal(platId) {
   const plat = state.investments.platforms.find(p => p.id === platId);
   showModal(`
     <h3 style="margin-bottom:16px">Upravit ${plat.name}</h3>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Původní hodnota (Kč)</label>
+      <input type="number" disabled value="${plat.value || 0}" style="background:var(--bg);color:var(--text-muted)">
+    </div>
     <div class="form-group" style="margin-bottom:16px">
-      <label>Aktuální hodnota (Kč)</label>
+      <label>Nová hodnota (Kč)</label>
       <input type="number" id="m-plat-value" value="${plat.value || 0}">
     </div>
     <div class="flex gap-8">
@@ -953,8 +1140,19 @@ function openEditPlatformModal(platId) {
   `);
   document.getElementById('m-plat-cancel').onclick = hideModal;
   document.getElementById('m-plat-save').onclick = async () => {
-    plat.value = parseFloat(document.getElementById('m-plat-value').value) || 0;
-    await saveInvPlatforms();
+    const oldValue = plat.value || 0;
+    const newValue = parseFloat(document.getElementById('m-plat-value').value) || 0;
+    plat.value = newValue;
+    state.investments.transactions.push({
+      id: uid_gen(),
+      date: new Date().toISOString().slice(0,10),
+      type: 'value_change',
+      platform: plat.name,
+      oldValue,
+      newValue,
+      note: ''
+    });
+    await Promise.all([saveInvPlatforms(), saveInvTx()]);
     hideModal();
     renderInvestments();
   };
@@ -980,11 +1178,17 @@ document.getElementById('btn-add-platform').addEventListener('click', () => {
   document.getElementById('m-newplat-save').onclick = async () => {
     const name = document.getElementById('m-newplat-name').value.trim();
     if (!name) return;
-    state.investments.platforms.push({
-      id: uid_gen(), name,
-      value: parseFloat(document.getElementById('m-newplat-val').value) || 0
+    const value = parseFloat(document.getElementById('m-newplat-val').value) || 0;
+    state.investments.platforms.push({ id: uid_gen(), name, value });
+    state.investments.transactions.push({
+      id: uid_gen(),
+      date: new Date().toISOString().slice(0,10),
+      type: 'new_platform',
+      platform: name,
+      amount: value,
+      note: ''
     });
-    await saveInvPlatforms();
+    await Promise.all([saveInvPlatforms(), saveInvTx()]);
     hideModal();
     renderInvestments();
   };
@@ -1035,6 +1239,10 @@ document.getElementById('btn-add-transaction').addEventListener('click', () => {
     hideModal();
     renderInvestments();
   };
+});
+
+document.getElementById('calc-initial').addEventListener('input', () => {
+  document.getElementById('calc-initial')._userEdited = true;
 });
 
 document.getElementById('btn-calc').addEventListener('click', () => {
