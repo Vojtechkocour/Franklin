@@ -568,7 +568,7 @@ function renderDashboard() {
 
   const costsMonth = state.costs.items.reduce((s, i) => s + itemMonthlyCZK(i), 0);
   const costsYear  = state.costs.items.reduce((s, i) => s + itemYearlyCZK(i), 0);
-  const portfolio  = state.investments.platforms.reduce((s, p) => s + (p.value || 0), 0);
+  const portfolio  = state.investments.platforms.reduce((s, p) => s + toCZK(p.value || 0, p.currency || 'CZK'), 0);
 
   document.getElementById('dash-income-month').textContent = fmt(incomeMonth);
   document.getElementById('dash-costs-month').textContent  = fmt(costsMonth);
@@ -1068,28 +1068,38 @@ document.getElementById('btn-add-category').addEventListener('click', () => {
 // ============================================================
 // INVESTMENTS
 // ============================================================
+function fmtOrig(value, currency) {
+  if (currency === 'EUR') return (value || 0).toLocaleString('cs-CZ', {maximumFractionDigits: 2}) + ' €';
+  if (currency === 'USD') return (value || 0).toLocaleString('cs-CZ', {maximumFractionDigits: 2}) + ' $';
+  return fmt(value);
+}
+
 function renderInvestments() {
-  const total = state.investments.platforms.reduce((s,p) => s + (p.value || 0), 0);
+  const total = state.investments.platforms.reduce((s,p) => s + toCZK(p.value || 0, p.currency || 'CZK'), 0);
   // Předvyplnit kalkulačku hodnotou portfolia (uživatel může ručně upravit)
   const calcEl = document.getElementById('calc-initial');
   if (calcEl && !calcEl._userEdited) calcEl.value = Math.round(total) || '';
   let platHtml = state.investments.platforms.length === 0
     ? '<p class="text-muted">Žádné platformy.</p>'
     : `<div class="table-wrap"><table>
-        <thead><tr><th>Platforma</th><th class="text-right">Hodnota (Kč)</th><th></th></tr></thead>
+        <thead><tr><th>Platforma</th><th>Měna</th><th class="text-right">Hodnota</th><th class="text-right">Hodnota (Kč)</th><th></th></tr></thead>
         <tbody>
-          ${state.investments.platforms.map(p => `
-            <tr>
+          ${state.investments.platforms.map(p => {
+            const cur = p.currency || 'CZK';
+            const czk = toCZK(p.value || 0, cur);
+            return `<tr>
               <td>${p.name}</td>
-              <td class="text-right bold">${fmt(p.value || 0)}</td>
+              <td class="text-muted">${cur}</td>
+              <td class="text-right">${fmtOrig(p.value || 0, cur)}</td>
+              <td class="text-right bold">${fmt(czk)}</td>
               <td class="flex gap-8">
                 <button class="btn btn-ghost btn-sm" data-edit-plat="${p.id}">Upravit</button>
                 <button class="btn btn-ghost btn-sm" data-del-plat="${p.id}">✕</button>
               </td>
-            </tr>
-          `).join('')}
+            </tr>`;
+          }).join('')}
           <tr>
-            <td class="bold">CELKEM</td>
+            <td class="bold" colspan="3">CELKEM</td>
             <td class="text-right bold">${fmt(total)}</td>
             <td></td>
           </tr>
@@ -1122,18 +1132,20 @@ function renderInvestments() {
             let amountCol = '';
             let deltaCol = '';
             if (tx.type === 'value_change') {
-              const delta = (tx.newValue || 0) - (tx.oldValue || 0);
-              const isPos = delta >= 0;
+              const cur = tx.currency || 'CZK';
+              const deltaCZK = toCZK(tx.newValue || 0, cur) - toCZK(tx.oldValue || 0, cur);
+              const isPos = deltaCZK >= 0;
               rowBg = isPos ? 'background:rgba(22,163,74,.06)' : 'background:rgba(220,38,38,.06)';
               typLabel = 'Změna hodnoty';
               platformCol = tx.platform || '';
-              amountCol = `<span>${fmt(tx.oldValue)} → <strong>${fmt(tx.newValue)}</strong></span>`;
-              deltaCol = `<span style="font-weight:700;color:${isPos?'var(--success)':'var(--danger)'}">${isPos?'+':''}${fmt(delta)}</span>`;
+              amountCol = `<span>${fmtOrig(tx.oldValue, cur)} → <strong>${fmtOrig(tx.newValue, cur)}</strong></span>`;
+              deltaCol = `<span style="font-weight:700;color:${isPos?'var(--success)':'var(--danger)'}">${isPos?'+':''}${fmt(deltaCZK)}</span>`;
             } else if (tx.type === 'new_platform') {
+              const cur = tx.currency || 'CZK';
               rowBg = 'background:rgba(37,99,235,.05)';
               typLabel = 'Nová platforma';
               platformCol = tx.platform || '';
-              amountCol = `<strong>${fmt(tx.amount)}</strong>`;
+              amountCol = `<strong>${fmtOrig(tx.amount, cur)}</strong>`;
               deltaCol = '';
             } else {
               typLabel = 'Vklad';
@@ -1165,14 +1177,25 @@ function renderInvestments() {
 
 function openEditPlatformModal(platId) {
   const plat = state.investments.platforms.find(p => p.id === platId);
+  const cur = plat.currency || 'CZK';
   showModal(`
     <h3 style="margin-bottom:16px">Upravit ${plat.name}</h3>
-    <div class="form-group" style="margin-bottom:10px">
-      <label>Původní hodnota (Kč)</label>
-      <input type="number" disabled value="${plat.value || 0}" style="background:var(--bg);color:var(--text-muted)">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Původní hodnota</label>
+        <input type="number" disabled value="${plat.value || 0}" style="background:var(--bg);color:var(--text-muted)">
+      </div>
+      <div class="form-group">
+        <label>Měna</label>
+        <select id="m-plat-currency">
+          <option value="CZK" ${cur==='CZK'?'selected':''}>CZK</option>
+          <option value="EUR" ${cur==='EUR'?'selected':''}>EUR</option>
+          <option value="USD" ${cur==='USD'?'selected':''}>USD</option>
+        </select>
+      </div>
     </div>
     <div class="form-group" style="margin-bottom:16px">
-      <label>Nová hodnota (Kč)</label>
+      <label>Nová hodnota</label>
       <input type="number" id="m-plat-value" value="${plat.value || 0}">
     </div>
     <div class="flex gap-8">
@@ -1184,12 +1207,15 @@ function openEditPlatformModal(platId) {
   document.getElementById('m-plat-save').onclick = async () => {
     const oldValue = plat.value || 0;
     const newValue = parseFloat(document.getElementById('m-plat-value').value) || 0;
+    const newCur = document.getElementById('m-plat-currency').value;
     plat.value = newValue;
+    plat.currency = newCur;
     state.investments.transactions.push({
       id: uid_gen(),
       date: new Date().toISOString().slice(0,10),
       type: 'value_change',
       platform: plat.name,
+      currency: newCur,
       oldValue,
       newValue,
       note: ''
@@ -1207,11 +1233,21 @@ document.getElementById('btn-add-platform').addEventListener('click', () => {
       <label>Název platformy</label>
       <input type="text" id="m-newplat-name" placeholder="XTB">
     </div>
-    <div class="form-group" style="margin-bottom:16px">
-      <label>Aktuální hodnota (Kč)</label>
-      <input type="number" id="m-newplat-val" placeholder="0">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Aktuální hodnota</label>
+        <input type="number" id="m-newplat-val" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Měna</label>
+        <select id="m-newplat-currency">
+          <option value="CZK">CZK</option>
+          <option value="EUR">EUR</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
     </div>
-    <div class="flex gap-8">
+    <div class="flex gap-8" style="margin-top:6px">
       <button class="btn btn-primary" id="m-newplat-save">Přidat</button>
       <button class="btn btn-ghost" id="m-newplat-cancel">Zrušit</button>
     </div>
@@ -1221,12 +1257,14 @@ document.getElementById('btn-add-platform').addEventListener('click', () => {
     const name = document.getElementById('m-newplat-name').value.trim();
     if (!name) return;
     const value = parseFloat(document.getElementById('m-newplat-val').value) || 0;
-    state.investments.platforms.push({ id: uid_gen(), name, value });
+    const currency = document.getElementById('m-newplat-currency').value;
+    state.investments.platforms.push({ id: uid_gen(), name, value, currency });
     state.investments.transactions.push({
       id: uid_gen(),
       date: new Date().toISOString().slice(0,10),
       type: 'new_platform',
       platform: name,
+      currency,
       amount: value,
       note: ''
     });
