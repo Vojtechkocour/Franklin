@@ -607,11 +607,11 @@ function renderIncome() {
   const avg = activeMths > 0 ? total / activeMths : 0;
 
   document.getElementById('income-year-summary').innerHTML = `
-    <div class="card">
+    <div class="card dash-card">
       <div class="card-title">Příjmy ${incomeViewYear} celkem</div>
       <div class="card-value green">${fmt(total)}</div>
     </div>
-    <div class="card">
+    <div class="card dash-card">
       <div class="card-title">Průměr za měsíc</div>
       <div class="card-value">${fmt(avg)}</div>
     </div>
@@ -753,11 +753,11 @@ function renderCosts() {
   const totalYear  = state.costs.items.reduce((s,i) => s + itemYearlyCZK(i), 0);
 
   document.getElementById('costs-totals').innerHTML = `
-    <div class="card">
+    <div class="card dash-card">
       <div class="card-title">Celkem měsíčně</div>
       <div class="card-value red">${fmt(totalMonth)}</div>
     </div>
-    <div class="card">
+    <div class="card dash-card">
       <div class="card-title">Celkem ročně</div>
       <div class="card-value red">${fmt(totalYear)}</div>
     </div>
