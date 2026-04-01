@@ -1067,7 +1067,10 @@ function renderInvestments() {
       renderInvestments();
     }));
 
-  const txs = [...state.investments.transactions].sort((a,b) => b.date.localeCompare(a.date));
+  const txs = [...state.investments.transactions].sort((a,b) => {
+    const d = b.date.localeCompare(a.date);
+    return d !== 0 ? d : b.id.localeCompare(a.id);
+  });
   let txHtml = txs.length === 0
     ? '<p class="text-muted">Žádné transakce.</p>'
     : `<table>
