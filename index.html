@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Franklin — Osobní finance</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #eff6ff;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .nav-inner {
+      max-width: 960px; margin: 0 auto; padding: 0 16px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .nav-logo {
+      font-weight: 700; color: var(--primary); font-size: 17px;
+      padding: 14px 16px 14px 0; margin-right: 8px;
+      border-right: 1px solid var(--border); white-space: nowrap;
+    }
+    .nav-btn {
+      background: none; border: none; padding: 14px 14px;
+      cursor: pointer; color: var(--text-muted); font-size: 14px;
+      font-weight: 500; border-bottom: 3px solid transparent;
+      margin-bottom: -1px; transition: color .15s, border-color .15s;
+    }
+    .nav-btn:hover { color: var(--primary); }
+    .nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* MAIN */
+    main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* CARDS */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+    }
+    .card + .card { margin-top: 12px; }
+    .card-title {
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px;
+    }
+    .card-value { font-size: 26px; font-weight: 700; }
+    .card-value.green { color: var(--success); }
+    .card-value.red { color: var(--danger); }
+
+    /* GRID */
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 600px) {
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* HEADINGS */
+    h2 { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+    h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+
+    /* FORM */
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+    .form-group label { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+    .form-group input,
+    .form-group select {
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 10px; font-size: 14px; background: var(--surface);
+      color: var(--text); font-family: inherit; transition: border-color .15s;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+
+    /* BUTTONS */
+    .btn {
+      padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 14px; font-weight: 600; transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-ghost { background: none; border: 1px solid var(--border); color: var(--text-muted); }
+    .btn-sm { padding: 5px 10px; font-size: 13px; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th {
+      text-align: left; font-size: 12px; font-weight: 600;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: .05em; padding: 8px 10px;
+      border-bottom: 2px solid var(--border);
+    }
+    td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg); }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 16px;
+    }
+    .section-header h2,
+    .section-header h3 { margin-bottom: 0; }
+
+    /* LOGIN */
+    #login-screen {
+      display: none; position: fixed; inset: 0;
+      background: var(--bg); z-index: 200;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 20px; text-align: center;
+    }
+    #login-screen.visible { display: flex; }
+    .login-logo { font-size: 52px; margin-bottom: 4px; }
+    .login-title { font-size: 30px; font-weight: 700; }
+    .login-sub { color: var(--text-muted); margin-bottom: 8px; }
+    .btn-google {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff; border: 1px solid var(--border);
+      color: var(--text); padding: 12px 24px; border-radius: 10px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      box-shadow: var(--shadow); transition: box-shadow .15s;
+    }
+    .btn-google:hover { box-shadow: var(--shadow-md); }
+    .btn-google img { width: 20px; height: 20px; }
+
+    /* MISC */
+    .text-muted { color: var(--text-muted); font-size: 13px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-8 { margin-top: 8px; }
+    .flex { display: flex; }
+    .gap-8 { gap: 8px; }
+    .align-center { align-items: center; }
+    .bold { font-weight: 700; }
+    .text-right { text-align: right; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="visible">
+  <div>
+    <div class="login-logo">💰</div>
+    <h1 class="login-title">Franklin</h1>
+    <p class="login-sub">Osobní finanční pomocník</p>
+    <button class="btn-google" id="btn-login">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Přihlásit se přes Google
+    </button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="app-nav" style="display:none">
+  <div class="nav-inner">
+    <div class="nav-logo">Franklin</div>
+    <button class="nav-btn active" data-section="dashboard">Přehled</button>
+    <button class="nav-btn" data-section="income">Příjmy</button>
+    <button class="nav-btn" data-section="costs">Náklady</button>
+    <button class="nav-btn" data-section="investments">Investice</button>
+    <button class="nav-btn" data-section="settings">Nastavení</button>
+  </div>
+</nav>
+
+<main id="app-main" style="display:none">
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="section active">
+    <h2 id="dash-title">Přehled</h2>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">Příjmy tento měsíc</div>
+        <div class="card-value green" id="dash-income-month">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Náklady tento měsíc</div>
+        <div class="card-value red" id="dash-costs-month">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Zůstatek</div>
+        <div class="card-value" id="dash-balance-month">—</div>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">Příjmy letos celkem</div>
+        <div class="card-value green" id="dash-income-year">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Náklady letos celkem</div>
+        <div class="card-value red" id="dash-costs-year">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Portfolio celkem</div>
+        <div class="card-value" id="dash-portfolio">—</div>
+      </div>
+    </div>
+    <div class="card mt-16">
+      <h3>Náklady letos podle kategorií</h3>
+      <div id="dash-costs-breakdown"></div>
+    </div>
+  </section>
+
+  <!-- INCOME -->
+  <section id="income" class="section">
+    <div class="section-header">
+      <h2>Příjmy</h2>
+      <div class="flex gap-8 align-center">
+        <button class="btn btn-ghost btn-sm" id="income-prev-year">←</button>
+        <span id="income-year-label" class="bold">2026</span>
+        <button class="btn btn-ghost btn-sm" id="income-next-year">→</button>
+      </div>
+    </div>
+    <div id="income-year-summary" class="grid-2"></div>
+    <div id="income-months"></div>
+  </section>
+
+  <!-- COSTS -->
+  <section id="costs" class="section">
+    <div class="section-header">
+      <h2>Náklady</h2>
+    </div>
+    <div id="costs-totals" class="grid-2"></div>
+    <div id="costs-categories"></div>
+    <div class="mt-16">
+      <button class="btn btn-ghost" id="btn-add-category">+ Přidat kategorii</button>
+    </div>
+  </section>
+
+  <!-- INVESTMENTS -->
+  <section id="investments" class="section">
+    <h2>Investice</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Hodnoty portfolia</h3>
+        <div id="inv-platforms"></div>
+        <button class="btn btn-ghost btn-sm mt-16" id="btn-add-platform">+ Přidat platformu</button>
+      </div>
+      <div class="card">
+        <h3>Kalkulačka složeného úročení</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Počáteční hodnota (Kč)</label>
+            <input type="number" id="calc-initial" placeholder="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Roční úrok (%)</label>
+            <input type="number" id="calc-rate" placeholder="7">
+          </div>
+          <div class="form-group">
+            <label>Horizont (roky)</label>
+            <input type="number" id="calc-years" placeholder="10">
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-calc">Vypočítat</button>
+        <div id="calc-result" class="mt-16"></div>
+      </div>
+    </div>
+    <div class="card mt-16">
+      <div class="section-header">
+        <h3>Historie transakcí</h3>
+        <button class="btn btn-primary btn-sm" id="btn-add-transaction">+ Transakce</button>
+      </div>
+      <div id="inv-transactions" class="mt-8"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="section">
+    <h2>Nastavení</h2>
+    <div class="card">
+      <h3>Kurzy měn</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>1 EUR = Kč</label>
+          <input type="number" id="rate-eur" step="0.01" placeholder="25.00">
+        </div>
+        <div class="form-group">
+          <label>1 USD = Kč</label>
+          <input type="number" id="rate-usd" step="0.01" placeholder="23.00">
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-primary" id="btn-save-rates">Uložit kurzy</button>
+        </div>
+      </div>
+      <p id="rates-saved" class="text-muted mt-8" style="display:none">✓ Kurzy uloženy.</p>
+    </div>
+    <div class="card mt-16">
+      <h3>Export dat</h3>
+      <p class="text-muted" style="margin-bottom:12px">Stáhni zálohu všech dat jako JSON soubor.</p>
+      <button class="btn btn-ghost" id="btn-export">Exportovat do JSON</button>
+    </div>
+    <div class="card mt-16">
+      <h3>Účet</h3>
+      <p class="text-muted" id="settings-user" style="margin-bottom:12px"></p>
+      <button class="btn btn-ghost" id="btn-logout">Odhlásit se</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px;width:100%;max-width:440px;box-shadow:var(--shadow-md);margin:16px;">
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- FIREBASE SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBgEssUXMSbwBoItyI4izEQBvJe50S6rzs",
+  authDomain: "franklin-9bfdd.firebaseapp.com",
+  projectId: "franklin-9bfdd",
+  storageBucket: "franklin-9bfdd.firebasestorage.app",
+  messagingSenderId: "837014147534",
+  appId: "1:837014147534:web:cd9ea07248116199ab5b9f"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ============================================================
+// STATE
+// ============================================================
+let uid = null;
+let state = {
+  settings: { eurRate: 25, usdRate: 23 },
+  income: {},
+  costs: { categories: [], items: [] },
+  investments: { platforms: [], transactions: [] }
+};
+let incomeViewYear = new Date().getFullYear();
+
+// ============================================================
+// HELPERS
+// ============================================================
+const CZ_MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen',
+                   'Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+function fmt(n) {
+  return new Intl.NumberFormat('cs-CZ', {
+    style: 'currency', currency: 'CZK', maximumFractionDigits: 0
+  }).format(n || 0);
+}
+
+function uid_gen() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function toCZK(price, currency) {
+  if (currency === 'EUR') return price * state.settings.eurRate;
+  if (currency === 'USD') return price * state.settings.usdRate;
+  return price;
+}
+
+function itemMonthlyCZK(item) {
+  const czk = toCZK(item.price || 0, item.currency || 'CZK');
+  return item.frequency === 'yearly' ? czk / 12 : czk;
+}
+
+function itemYearlyCZK(item) {
+  const czk = toCZK(item.price || 0, item.currency || 'CZK');
+  return item.frequency === 'yearly' ? czk : czk * 12;
+}
+
+function showModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function hideModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  document.getElementById('modal-content').innerHTML = '';
+}
+
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) hideModal();
+});
+
+// ============================================================
+// FIRESTORE
+// ============================================================
+function userDoc(path) {
+  return db.doc(`users/${uid}/${path}`);
+}
+
+async function loadAllData() {
+  const [settSnap, incSnap, catSnap, itemSnap, platSnap, txSnap] = await Promise.all([
+    userDoc('data/settings').get(),
+    userDoc('data/income').get(),
+    userDoc('data/costCategories').get(),
+    userDoc('data/costItems').get(),
+    userDoc('data/invPlatforms').get(),
+    userDoc('data/invTransactions').get(),
+  ]);
+  if (settSnap.exists) state.settings = { ...state.settings, ...settSnap.data() };
+  if (incSnap.exists) state.income = incSnap.data().data || {};
+  if (catSnap.exists) state.costs.categories = catSnap.data().items || [];
+  if (itemSnap.exists) state.costs.items = itemSnap.data().items || [];
+  if (platSnap.exists) state.investments.platforms = platSnap.data().items || [];
+  if (txSnap.exists) state.investments.transactions = txSnap.data().items || [];
+
+  // Výchozí kategorie pro nové uživatele
+  if (!catSnap.exists) {
+    state.costs.categories = [
+      { id: uid_gen(), name: 'Zábava' },
+      { id: uid_gen(), name: 'Internet & služby' },
+      { id: uid_gen(), name: 'Auto' },
+      { id: uid_gen(), name: 'Byt' },
+      { id: uid_gen(), name: 'Ostatní' },
+    ];
+    await saveCostCats();
+  }
+}
+
+async function saveSettings()     { await userDoc('data/settings').set(state.settings); }
+async function saveIncome()       { await userDoc('data/income').set({ data: state.income }); }
+async function saveCostCats()     { await userDoc('data/costCategories').set({ items: state.costs.categories }); }
+async function saveCostItems()    { await userDoc('data/costItems').set({ items: state.costs.items }); }
+async function saveInvPlatforms() { await userDoc('data/invPlatforms').set({ items: state.investments.platforms }); }
+async function saveInvTx()        { await userDoc('data/invTransactions').set({ items: state.investments.transactions }); }
+
+// ============================================================
+// NAV
+// ============================================================
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.section).classList.add('active');
+    renderSection(btn.dataset.section);
+  });
+});
+
+function renderSection(sec) {
+  const map = {
+    dashboard: renderDashboard,
+    income: renderIncome,
+    costs: renderCosts,
+    investments: renderInvestments,
+    settings: renderSettings
+  };
+  if (map[sec]) map[sec]();
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    uid = user.uid;
+    document.getElementById('login-screen').classList.remove('visible');
+    document.getElementById('app-nav').style.display = '';
+    document.getElementById('app-main').style.display = '';
+    await loadAllData();
+    renderDashboard();
+  } else {
+    uid = null;
+    document.getElementById('login-screen').classList.add('visible');
+    document.getElementById('app-nav').style.display = 'none';
+    document.getElementById('app-main').style.display = 'none';
+  }
+});
+
+document.getElementById('btn-login').addEventListener('click', () => {
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+});
+
+document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  document.getElementById('dash-title').textContent =
+    `Přehled — ${CZ_MONTHS[now.getMonth()]} ${year}`;
+
+  const monthItems = state.income[year]?.[month]?.items || [];
+  const incomeMonth = monthItems.reduce((s, i) => s + (i.amount || 0), 0);
+
+  let incomeYear = 0;
+  Object.values(state.income[year] || {}).forEach(m =>
+    (m.items || []).forEach(i => incomeYear += (i.amount || 0))
+  );
+
+  const costsMonth = state.costs.items.reduce((s, i) => s + itemMonthlyCZK(i), 0);
+  const costsYear  = state.costs.items.reduce((s, i) => s + itemYearlyCZK(i), 0);
+  const portfolio  = state.investments.platforms.reduce((s, p) => s + (p.value || 0), 0);
+
+  document.getElementById('dash-income-month').textContent = fmt(incomeMonth);
+  document.getElementById('dash-costs-month').textContent  = fmt(costsMonth);
+  document.getElementById('dash-income-year').textContent  = fmt(incomeYear);
+  document.getElementById('dash-costs-year').textContent   = fmt(costsYear);
+  document.getElementById('dash-portfolio').textContent    = fmt(portfolio);
+
+  const balance = incomeMonth - costsMonth;
+  const balEl = document.getElementById('dash-balance-month');
+  balEl.textContent = fmt(balance);
+  balEl.className = 'card-value ' + (balance >= 0 ? 'green' : 'red');
+
+  const bd = document.getElementById('dash-costs-breakdown');
+  if (!state.costs.categories.length) {
+    bd.innerHTML = '<p class="text-muted">Žádné kategorie nákladů.</p>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Kategorie</th><th class="text-right">Měsíčně</th><th class="text-right">Ročně</th></tr></thead><tbody>';
+  state.costs.categories.forEach(cat => {
+    const items = state.costs.items.filter(i => i.categoryId === cat.id);
+    html += `<tr>
+      <td>${cat.name}</td>
+      <td class="text-right">${fmt(items.reduce((s,i) => s+itemMonthlyCZK(i), 0))}</td>
+      <td class="text-right">${fmt(items.reduce((s,i) => s+itemYearlyCZK(i), 0))}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  bd.innerHTML = html;
+}
+
+// ============================================================
+// INCOME
+// ============================================================
+function renderIncome() {
+  document.getElementById('income-year-label').textContent = incomeViewYear;
+  const yearData = state.income[incomeViewYear] || {};
+
+  let total = 0, activeMths = 0;
+  Object.values(yearData).forEach(m => {
+    const s = (m.items || []).reduce((a, i) => a + (i.amount || 0), 0);
+    total += s; if (s > 0) activeMths++;
+  });
+  const avg = activeMths > 0 ? total / activeMths : 0;
+
+  document.getElementById('income-year-summary').innerHTML = `
+    <div class="card">
+      <div class="card-title">Příjmy ${incomeViewYear} celkem</div>
+      <div class="card-value green">${fmt(total)}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Průměr za měsíc</div>
+      <div class="card-value">${fmt(avg)}</div>
+    </div>
+  `;
+
+  let html = '';
+  for (let m = 1; m <= 12; m++) {
+    const mStr = String(m).padStart(2, '0');
+    const items = yearData[mStr]?.items || [];
+    const mTotal = items.reduce((s, i) => s + (i.amount || 0), 0);
+    html += `
+      <div class="card mt-16">
+        <div class="section-header">
+          <h3>${CZ_MONTHS[m-1]}</h3>
+          <div class="flex gap-8 align-center">
+            <span class="bold">${fmt(mTotal)}</span>
+            <button class="btn btn-primary btn-sm" data-add-income="${mStr}">+ Příjem</button>
+          </div>
+        </div>
+        ${items.length === 0 ? '<p class="text-muted">Žádné příjmy.</p>' : `
+          <table>
+            <thead><tr><th>Název</th><th class="text-right">Částka</th><th>Poznámka</th><th></th></tr></thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td class="text-right bold">${fmt(item.amount)}</td>
+                  <td class="text-muted">${item.note || ''}</td>
+                  <td><button class="btn btn-ghost btn-sm" data-del-income="${item.id}" data-del-m="${mStr}">✕</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `}
+      </div>
+    `;
+  }
+  document.getElementById('income-months').innerHTML = html;
+
+  document.querySelectorAll('[data-add-income]').forEach(btn => {
+    btn.addEventListener('click', () => openAddIncomeModal(btn.dataset.addIncome));
+  });
+  document.querySelectorAll('[data-del-income]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const m = btn.dataset.delM, id = btn.dataset.delIncome;
+      if (!state.income[incomeViewYear]?.[m]) return;
+      state.income[incomeViewYear][m].items =
+        state.income[incomeViewYear][m].items.filter(i => i.id !== id);
+      await saveIncome();
+      renderIncome();
+    });
+  });
+}
+
+function openAddIncomeModal(mStr) {
+  showModal(`
+    <h3 style="margin-bottom:16px">Přidat příjem — ${CZ_MONTHS[parseInt(mStr)-1]} ${incomeViewYear}</h3>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Název zdroje</label>
+      <input type="text" id="m-inc-name" placeholder="Plat PČR">
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Částka (Kč)</label>
+      <input type="number" id="m-inc-amount" placeholder="0">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Poznámka (volitelně)</label>
+      <input type="text" id="m-inc-note">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-inc-save">Přidat</button>
+      <button class="btn btn-ghost" id="m-inc-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-inc-cancel').onclick = hideModal;
+  document.getElementById('m-inc-save').onclick = async () => {
+    const name = document.getElementById('m-inc-name').value.trim();
+    const amount = parseFloat(document.getElementById('m-inc-amount').value) || 0;
+    const note = document.getElementById('m-inc-note').value.trim();
+    if (!name) return;
+    if (!state.income[incomeViewYear]) state.income[incomeViewYear] = {};
+    if (!state.income[incomeViewYear][mStr]) state.income[incomeViewYear][mStr] = { items: [] };
+    state.income[incomeViewYear][mStr].items.push({ id: uid_gen(), name, amount, note });
+    await saveIncome();
+    hideModal();
+    renderIncome();
+  };
+}
+
+document.getElementById('income-prev-year').addEventListener('click', () => { incomeViewYear--; renderIncome(); });
+document.getElementById('income-next-year').addEventListener('click', () => { incomeViewYear++; renderIncome(); });
+
+// ============================================================
+// COSTS
+// ============================================================
+function renderCosts() {
+  const totalMonth = state.costs.items.reduce((s,i) => s + itemMonthlyCZK(i), 0);
+  const totalYear  = state.costs.items.reduce((s,i) => s + itemYearlyCZK(i), 0);
+
+  document.getElementById('costs-totals').innerHTML = `
+    <div class="card">
+      <div class="card-title">Celkem měsíčně</div>
+      <div class="card-value red">${fmt(totalMonth)}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Celkem ročně</div>
+      <div class="card-value red">${fmt(totalYear)}</div>
+    </div>
+  `;
+
+  let html = '';
+  state.costs.categories.forEach(cat => {
+    const items = state.costs.items.filter(i => i.categoryId === cat.id);
+    const catM = items.reduce((s,i) => s + itemMonthlyCZK(i), 0);
+    const catY = items.reduce((s,i) => s + itemYearlyCZK(i), 0);
+    html += `
+      <div class="card mt-16">
+        <div class="section-header">
+          <div class="flex gap-8 align-center">
+            <h3>${cat.name}</h3>
+            <span class="text-muted">${fmt(catM)}/měs | ${fmt(catY)}/rok</span>
+          </div>
+          <div class="flex gap-8">
+            <button class="btn btn-primary btn-sm" data-add-item="${cat.id}">+ Položka</button>
+            <button class="btn btn-ghost btn-sm" data-rename-cat="${cat.id}">Přejmenovat</button>
+            <button class="btn btn-danger btn-sm" data-del-cat="${cat.id}">Smazat</button>
+          </div>
+        </div>
+        ${items.length === 0 ? '<p class="text-muted">Žádné položky.</p>' : `
+          <table>
+            <thead>
+              <tr>
+                <th>Název</th><th>Měna</th><th class="text-right">Cena</th>
+                <th>Frekvence</th><th class="text-right">Měsíčně (Kč)</th>
+                <th>Platforma</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>${item.currency || 'CZK'}</td>
+                  <td class="text-right">${item.price}</td>
+                  <td>${item.frequency === 'yearly' ? 'ročně' : 'měsíčně'}</td>
+                  <td class="text-right bold">${fmt(itemMonthlyCZK(item))}</td>
+                  <td class="text-muted">${item.platform || ''}</td>
+                  <td><button class="btn btn-ghost btn-sm" data-del-item="${item.id}">✕</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `}
+      </div>
+    `;
+  });
+  document.getElementById('costs-categories').innerHTML = html;
+
+  document.querySelectorAll('[data-add-item]').forEach(btn =>
+    btn.addEventListener('click', () => openAddCostItemModal(btn.dataset.addItem)));
+  document.querySelectorAll('[data-rename-cat]').forEach(btn =>
+    btn.addEventListener('click', () => openRenameCatModal(btn.dataset.renameCat)));
+  document.querySelectorAll('[data-del-cat]').forEach(btn =>
+    btn.addEventListener('click', async () => {
+      if (!confirm('Smazat kategorii a všechny její položky?')) return;
+      const id = btn.dataset.delCat;
+      state.costs.categories = state.costs.categories.filter(c => c.id !== id);
+      state.costs.items = state.costs.items.filter(i => i.categoryId !== id);
+      await Promise.all([saveCostCats(), saveCostItems()]);
+      renderCosts();
+    }));
+  document.querySelectorAll('[data-del-item]').forEach(btn =>
+    btn.addEventListener('click', async () => {
+      state.costs.items = state.costs.items.filter(i => i.id !== btn.dataset.delItem);
+      await saveCostItems();
+      renderCosts();
+    }));
+}
+
+function openAddCostItemModal(categoryId) {
+  showModal(`
+    <h3 style="margin-bottom:16px">Přidat položku nákladů</h3>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Název</label>
+      <input type="text" id="m-item-name" placeholder="ChatGPT">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cena</label>
+        <input type="number" id="m-item-price" placeholder="500">
+      </div>
+      <div class="form-group">
+        <label>Měna</label>
+        <select id="m-item-currency">
+          <option value="CZK">CZK</option>
+          <option value="EUR">EUR</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Frekvence</label>
+      <select id="m-item-freq">
+        <option value="monthly">Měsíčně</option>
+        <option value="yearly">Ročně</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Platforma (volitelně)</label>
+        <input type="text" id="m-item-platform">
+      </div>
+      <div class="form-group">
+        <label>Splatnost — den v měsíci</label>
+        <input type="number" id="m-item-due" min="1" max="31" placeholder="1">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Poznámka (volitelně)</label>
+      <input type="text" id="m-item-note">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-item-save">Přidat</button>
+      <button class="btn btn-ghost" id="m-item-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-item-cancel').onclick = hideModal;
+  document.getElementById('m-item-save').onclick = async () => {
+    const name = document.getElementById('m-item-name').value.trim();
+    if (!name) return;
+    state.costs.items.push({
+      id: uid_gen(), categoryId,
+      name,
+      price: parseFloat(document.getElementById('m-item-price').value) || 0,
+      currency: document.getElementById('m-item-currency').value,
+      frequency: document.getElementById('m-item-freq').value,
+      platform: document.getElementById('m-item-platform').value.trim(),
+      dueDay: parseInt(document.getElementById('m-item-due').value) || null,
+      note: document.getElementById('m-item-note').value.trim()
+    });
+    await saveCostItems();
+    hideModal();
+    renderCosts();
+  };
+}
+
+function openRenameCatModal(catId) {
+  const cat = state.costs.categories.find(c => c.id === catId);
+  showModal(`
+    <h3 style="margin-bottom:16px">Přejmenovat kategorii</h3>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Nový název</label>
+      <input type="text" id="m-cat-name" value="${cat.name}">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-cat-save">Uložit</button>
+      <button class="btn btn-ghost" id="m-cat-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-cat-cancel').onclick = hideModal;
+  document.getElementById('m-cat-save').onclick = async () => {
+    const name = document.getElementById('m-cat-name').value.trim();
+    if (!name) return;
+    cat.name = name;
+    await saveCostCats();
+    hideModal();
+    renderCosts();
+  };
+}
+
+document.getElementById('btn-add-category').addEventListener('click', () => {
+  showModal(`
+    <h3 style="margin-bottom:16px">Přidat kategorii</h3>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Název kategorie</label>
+      <input type="text" id="m-newcat-name" placeholder="Auto">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-newcat-save">Přidat</button>
+      <button class="btn btn-ghost" id="m-newcat-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-newcat-cancel').onclick = hideModal;
+  document.getElementById('m-newcat-save').onclick = async () => {
+    const name = document.getElementById('m-newcat-name').value.trim();
+    if (!name) return;
+    state.costs.categories.push({ id: uid_gen(), name });
+    await saveCostCats();
+    hideModal();
+    renderCosts();
+  };
+});
+
+// ============================================================
+// INVESTMENTS
+// ============================================================
+function renderInvestments() {
+  const total = state.investments.platforms.reduce((s,p) => s + (p.value || 0), 0);
+  let platHtml = state.investments.platforms.length === 0
+    ? '<p class="text-muted">Žádné platformy.</p>'
+    : `<table>
+        <thead><tr><th>Platforma</th><th class="text-right">Hodnota (Kč)</th><th></th></tr></thead>
+        <tbody>
+          ${state.investments.platforms.map(p => `
+            <tr>
+              <td>${p.name}</td>
+              <td class="text-right bold">${fmt(p.value || 0)}</td>
+              <td class="flex gap-8">
+                <button class="btn btn-ghost btn-sm" data-edit-plat="${p.id}">Upravit</button>
+                <button class="btn btn-ghost btn-sm" data-del-plat="${p.id}">✕</button>
+              </td>
+            </tr>
+          `).join('')}
+          <tr>
+            <td class="bold">CELKEM</td>
+            <td class="text-right bold">${fmt(total)}</td>
+            <td></td>
+          </tr>
+        </tbody>
+       </table>`;
+  document.getElementById('inv-platforms').innerHTML = platHtml;
+
+  document.querySelectorAll('[data-edit-plat]').forEach(btn =>
+    btn.addEventListener('click', () => openEditPlatformModal(btn.dataset.editPlat)));
+  document.querySelectorAll('[data-del-plat]').forEach(btn =>
+    btn.addEventListener('click', async () => {
+      state.investments.platforms = state.investments.platforms.filter(p => p.id !== btn.dataset.delPlat);
+      await saveInvPlatforms();
+      renderInvestments();
+    }));
+
+  const txs = [...state.investments.transactions].sort((a,b) => b.date.localeCompare(a.date));
+  let txHtml = txs.length === 0
+    ? '<p class="text-muted">Žádné transakce.</p>'
+    : `<table>
+        <thead><tr><th>Datum</th><th>Z účtu</th><th>Na platformu</th><th class="text-right">Částka (Kč)</th><th>Poznámka</th><th></th></tr></thead>
+        <tbody>
+          ${txs.map(tx => `
+            <tr>
+              <td>${tx.date}</td>
+              <td>${tx.fromAccount || ''}</td>
+              <td>${tx.toPlatform || ''}</td>
+              <td class="text-right bold">${fmt(tx.amount)}</td>
+              <td class="text-muted">${tx.note || ''}</td>
+              <td><button class="btn btn-ghost btn-sm" data-del-tx="${tx.id}">✕</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+       </table>`;
+  document.getElementById('inv-transactions').innerHTML = txHtml;
+
+  document.querySelectorAll('[data-del-tx]').forEach(btn =>
+    btn.addEventListener('click', async () => {
+      state.investments.transactions = state.investments.transactions.filter(t => t.id !== btn.dataset.delTx);
+      await saveInvTx();
+      renderInvestments();
+    }));
+}
+
+function openEditPlatformModal(platId) {
+  const plat = state.investments.platforms.find(p => p.id === platId);
+  showModal(`
+    <h3 style="margin-bottom:16px">Upravit ${plat.name}</h3>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Aktuální hodnota (Kč)</label>
+      <input type="number" id="m-plat-value" value="${plat.value || 0}">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-plat-save">Uložit</button>
+      <button class="btn btn-ghost" id="m-plat-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-plat-cancel').onclick = hideModal;
+  document.getElementById('m-plat-save').onclick = async () => {
+    plat.value = parseFloat(document.getElementById('m-plat-value').value) || 0;
+    await saveInvPlatforms();
+    hideModal();
+    renderInvestments();
+  };
+}
+
+document.getElementById('btn-add-platform').addEventListener('click', () => {
+  showModal(`
+    <h3 style="margin-bottom:16px">Přidat platformu</h3>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Název platformy</label>
+      <input type="text" id="m-newplat-name" placeholder="XTB">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Aktuální hodnota (Kč)</label>
+      <input type="number" id="m-newplat-val" placeholder="0">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-newplat-save">Přidat</button>
+      <button class="btn btn-ghost" id="m-newplat-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-newplat-cancel').onclick = hideModal;
+  document.getElementById('m-newplat-save').onclick = async () => {
+    const name = document.getElementById('m-newplat-name').value.trim();
+    if (!name) return;
+    state.investments.platforms.push({
+      id: uid_gen(), name,
+      value: parseFloat(document.getElementById('m-newplat-val').value) || 0
+    });
+    await saveInvPlatforms();
+    hideModal();
+    renderInvestments();
+  };
+});
+
+document.getElementById('btn-add-transaction').addEventListener('click', () => {
+  const today = new Date().toISOString().slice(0,10);
+  showModal(`
+    <h3 style="margin-bottom:16px">Přidat transakci</h3>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Datum</label>
+      <input type="date" id="m-tx-date" value="${today}">
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Částka (Kč)</label>
+      <input type="number" id="m-tx-amount" placeholder="0">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Z účtu</label>
+        <input type="text" id="m-tx-from" placeholder="KB">
+      </div>
+      <div class="form-group">
+        <label>Na platformu</label>
+        <input type="text" id="m-tx-to" placeholder="XTB">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Poznámka (volitelně)</label>
+      <input type="text" id="m-tx-note">
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" id="m-tx-save">Přidat</button>
+      <button class="btn btn-ghost" id="m-tx-cancel">Zrušit</button>
+    </div>
+  `);
+  document.getElementById('m-tx-cancel').onclick = hideModal;
+  document.getElementById('m-tx-save').onclick = async () => {
+    state.investments.transactions.push({
+      id: uid_gen(),
+      date: document.getElementById('m-tx-date').value,
+      amount: parseFloat(document.getElementById('m-tx-amount').value) || 0,
+      fromAccount: document.getElementById('m-tx-from').value.trim(),
+      toPlatform: document.getElementById('m-tx-to').value.trim(),
+      note: document.getElementById('m-tx-note').value.trim()
+    });
+    await saveInvTx();
+    hideModal();
+    renderInvestments();
+  };
+});
+
+document.getElementById('btn-calc').addEventListener('click', () => {
+  const initial = parseFloat(document.getElementById('calc-initial').value) || 0;
+  const rate    = (parseFloat(document.getElementById('calc-rate').value) || 7) / 100;
+  const years   = parseInt(document.getElementById('calc-years').value) || 10;
+  const result  = initial * Math.pow(1 + rate, years);
+  const gain    = result - initial;
+  document.getElementById('calc-result').innerHTML = `
+    <div class="card" style="background:var(--primary-light)">
+      <div class="card-title">Budoucí hodnota za ${years} let</div>
+      <div class="card-value" style="color:var(--primary)">${fmt(result)}</div>
+      <p class="text-muted mt-8">Zhodnocení: <strong>${fmt(gain)}</strong> (${(rate*100).toFixed(1)} % p.a.)</p>
+    </div>
+  `;
+});
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings() {
+  document.getElementById('rate-eur').value = state.settings.eurRate || 25;
+  document.getElementById('rate-usd').value = state.settings.usdRate || 23;
+  const user = auth.currentUser;
+  if (user) document.getElementById('settings-user').textContent = `Přihlášen jako: ${user.email}`;
+}
+
+document.getElementById('btn-save-rates').addEventListener('click', async () => {
+  state.settings.eurRate = parseFloat(document.getElementById('rate-eur').value) || 25;
+  state.settings.usdRate = parseFloat(document.getElementById('rate-usd').value) || 23;
+  await saveSettings();
+  const msg = document.getElementById('rates-saved');
+  msg.style.display = '';
+  setTimeout(() => msg.style.display = 'none', 2500);
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `franklin-export-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
