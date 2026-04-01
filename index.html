@@ -92,7 +92,13 @@
     }
     .dash-card {
       display: flex; flex-direction: column; justify-content: space-between;
-      height: 100px;
+    }
+
+    /* Všechny summary gridy — pevná výška řádku */
+    #dashboard .grid-3,
+    #income-year-summary,
+    #costs-totals {
+      grid-auto-rows: 100px;
     }
     @media (max-width: 640px) {
       .grid-3 { grid-template-columns: 1fr 1fr; }
@@ -227,7 +233,7 @@
   <!-- DASHBOARD -->
   <section id="dashboard" class="section active">
     <h2 id="dash-title">Přehled</h2>
-    <div class="grid-3" style="margin-bottom:20px; grid-auto-rows: 100px;">
+    <div class="grid-3" style="margin-bottom:20px">
       <div class="card dash-card">
         <div class="card-title">Příjmy tento měsíc</div>
         <div class="card-value green" id="dash-income-month">—</div>
