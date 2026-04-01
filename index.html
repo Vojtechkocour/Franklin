@@ -91,7 +91,7 @@
     }
     .dash-card {
       display: flex; flex-direction: column; justify-content: center;
-      height: 100px;
+      min-height: 90px;
     }
     @media (max-width: 640px) {
       .grid-3 { grid-template-columns: 1fr 1fr; }
@@ -217,7 +217,7 @@
   <!-- DASHBOARD -->
   <section id="dashboard" class="section active">
     <h2 id="dash-title">Přehled</h2>
-    <div class="grid-3">
+    <div class="grid-3" style="margin-bottom:20px">
       <div class="card dash-card">
         <div class="card-title">Příjmy tento měsíc</div>
         <div class="card-value green" id="dash-income-month">—</div>
@@ -230,8 +230,6 @@
         <div class="card-title">Zůstatek</div>
         <div class="card-value" id="dash-balance-month">—</div>
       </div>
-    </div>
-    <div class="grid-3">
       <div class="card dash-card">
         <div class="card-title">Příjmy letos celkem</div>
         <div class="card-value green" id="dash-income-year">—</div>
