@@ -891,7 +891,7 @@ function openAddCostItemModal(categoryId) {
       </div>
       <div class="form-group">
         <label>Způsob platby</label>
-        <select id="m-item-payment">
+        <select id="m-item-payment" onchange="document.getElementById('m-item-payment-custom').style.display=this.value==='Jiné'?'block':'none'">
           <option value="">—</option>
           <option value="Karta">Karta</option>
           <option value="Apple Pay">Apple Pay</option>
@@ -900,6 +900,7 @@ function openAddCostItemModal(categoryId) {
           <option value="PayPal">PayPal</option>
           <option value="Jiné">Jiné</option>
         </select>
+        <input type="text" id="m-item-payment-custom" placeholder="Způsob platby..." style="display:none;margin-top:6px">
       </div>
     </div>
     <div class="form-group" style="margin-bottom:16px">
@@ -915,6 +916,8 @@ function openAddCostItemModal(categoryId) {
   document.getElementById('m-item-save').onclick = async () => {
     const name = document.getElementById('m-item-name').value.trim();
     if (!name) return;
+    const selPay = document.getElementById('m-item-payment').value;
+    const customPay = document.getElementById('m-item-payment-custom').value.trim();
     state.costs.items.push({
       id: uid_gen(), categoryId,
       name,
@@ -924,7 +927,7 @@ function openAddCostItemModal(categoryId) {
       platform: document.getElementById('m-item-platform').value.trim(),
       dueDay: parseInt(document.getElementById('m-item-due').value) || null,
       account: document.getElementById('m-item-account').value.trim(),
-      paymentMethod: document.getElementById('m-item-payment').value,
+      paymentMethod: selPay === 'Jiné' && customPay ? customPay : selPay,
       note: document.getElementById('m-item-note').value.trim()
     });
     await saveCostItems();
@@ -935,6 +938,10 @@ function openAddCostItemModal(categoryId) {
 
 function openEditCostItemModal(itemId) {
   const item = state.costs.items.find(i => i.id === itemId);
+  const PREDEFINED = ['', 'Karta', 'Apple Pay', 'Google Pay', 'Převodem', 'PayPal', 'Jiné'];
+  const isCustom = item.paymentMethod && !PREDEFINED.includes(item.paymentMethod);
+  const paySel = isCustom ? 'Jiné' : (item.paymentMethod || '');
+  const payCustom = isCustom ? item.paymentMethod : '';
   showModal(`
     <h3 style="margin-bottom:16px">Upravit položku</h3>
     <div class="form-group" style="margin-bottom:10px">
@@ -979,15 +986,16 @@ function openEditCostItemModal(itemId) {
       </div>
       <div class="form-group">
         <label>Způsob platby</label>
-        <select id="m-item-payment">
-          <option value="" ${!item.paymentMethod?'selected':''}>—</option>
-          <option value="Karta" ${item.paymentMethod==='Karta'?'selected':''}>Karta</option>
-          <option value="Apple Pay" ${item.paymentMethod==='Apple Pay'?'selected':''}>Apple Pay</option>
-          <option value="Google Pay" ${item.paymentMethod==='Google Pay'?'selected':''}>Google Pay</option>
-          <option value="Převodem" ${item.paymentMethod==='Převodem'?'selected':''}>Převodem</option>
-          <option value="PayPal" ${item.paymentMethod==='PayPal'?'selected':''}>PayPal</option>
-          <option value="Jiné" ${item.paymentMethod==='Jiné'?'selected':''}>Jiné</option>
+        <select id="m-item-payment" onchange="document.getElementById('m-item-payment-custom').style.display=this.value==='Jiné'?'block':'none'">
+          <option value="" ${paySel===''?'selected':''}>—</option>
+          <option value="Karta" ${paySel==='Karta'?'selected':''}>Karta</option>
+          <option value="Apple Pay" ${paySel==='Apple Pay'?'selected':''}>Apple Pay</option>
+          <option value="Google Pay" ${paySel==='Google Pay'?'selected':''}>Google Pay</option>
+          <option value="Převodem" ${paySel==='Převodem'?'selected':''}>Převodem</option>
+          <option value="PayPal" ${paySel==='PayPal'?'selected':''}>PayPal</option>
+          <option value="Jiné" ${paySel==='Jiné'?'selected':''}>Jiné</option>
         </select>
+        <input type="text" id="m-item-payment-custom" placeholder="Způsob platby..." value="${payCustom}" style="display:${isCustom?'block':'none'};margin-top:6px">
       </div>
     </div>
     <div class="form-group" style="margin-bottom:16px">
@@ -1010,7 +1018,9 @@ function openEditCostItemModal(itemId) {
     item.platform      = document.getElementById('m-item-platform').value.trim();
     item.dueDay        = parseInt(document.getElementById('m-item-due').value) || null;
     item.account       = document.getElementById('m-item-account').value.trim();
-    item.paymentMethod = document.getElementById('m-item-payment').value;
+    const selPay2  = document.getElementById('m-item-payment').value;
+    const custPay2 = document.getElementById('m-item-payment-custom').value.trim();
+    item.paymentMethod = selPay2 === 'Jiné' && custPay2 ? custPay2 : selPay2;
     item.note          = document.getElementById('m-item-note').value.trim();
     await saveCostItems();
     hideModal();
