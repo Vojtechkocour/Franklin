@@ -30,6 +30,7 @@
       color: var(--text);
       font-size: 15px;
       line-height: 1.5;
+      overflow-x: hidden;
     }
 
     /* NAV */
@@ -90,15 +91,23 @@
       gap: 12px; margin-bottom: 20px; align-items: stretch;
     }
     .dash-card {
-      display: flex; flex-direction: column; justify-content: flex-end;
-      min-height: 90px; padding-bottom: 18px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      min-height: 90px;
     }
-    .dash-card .card-title { margin-bottom: auto; padding-top: 4px; }
     @media (max-width: 640px) {
       .grid-3 { grid-template-columns: 1fr 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      main { padding: 16px 12px 80px; }
+      .card { padding: 14px 14px; }
+      .btn-sm { padding: 6px 11px; }
+      .nav-inner { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+      .nav-inner::-webkit-scrollbar { display: none; }
+      .nav-logo { padding: 10px 10px 10px 0; margin-right: 4px; font-size: 15px; }
+      .nav-btn { padding: 10px 10px; font-size: 13px; white-space: nowrap; }
     }
     @media (max-width: 400px) {
       .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .card-value { font-size: 18px; }
     }
 
     /* HEADINGS */
@@ -1092,7 +1101,7 @@ function renderInvestments() {
   });
   let txHtml = txs.length === 0
     ? '<p class="text-muted">Žádné transakce.</p>'
-    : `<table>
+    : `<div class="table-wrap"><table>
         <thead><tr><th>Datum</th><th>Typ</th><th>Platforma / Účet</th><th class="text-right">Hodnota / Částka</th><th>Změna</th><th>Poznámka</th><th></th></tr></thead>
         <tbody>
           ${txs.map(tx => {
@@ -1132,7 +1141,7 @@ function renderInvestments() {
             </tr>`;
           }).join('')}
         </tbody>
-       </table></div>`;
+       </table></div></div>`;
   document.getElementById('inv-transactions').innerHTML = txHtml;
 
   document.querySelectorAll('[data-del-tx]').forEach(btn =>
